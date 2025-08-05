@@ -155,15 +155,15 @@ def main():
     # optionally resume from a checkpoint
     if args.resume:
         if os.path.isfile(args.resume):
-            print("=> loading checkpoint '{}'".format(args.resume))
+            # print("=> loading checkpoint '{}'".format(args.resume))
             checkpoint = torch.load(args.resume)
             start_epoch = checkpoint['epoch']
             best_acc = checkpoint['best_acc']
             model.load_state_dict(checkpoint['state_dict'])
             lemniscate = checkpoint['lemniscate']
             optimizer.load_state_dict(checkpoint['optimizer'])
-            print("=> loaded checkpoint '{}' (epoch {})"
-                  .format(args.resume, checkpoint['epoch']))
+            # print("=> loaded checkpoint '{}' (epoch {})"
+            #       .format(args.resume, checkpoint['epoch']))
         else:
             print("=> no checkpoint found at '{}'".format(args.resume))
     else:
@@ -175,7 +175,7 @@ def main():
 
     for idx, data in enumerate(tqdm(trainloader_wo_shuf, desc="extracting training labels")):
 
-        label_batch = data['label'].to(torch.device("cpu"))
+        label_batch = data['label']
 
         y_true += list(np.squeeze(label_batch.numpy()).astype(np.float32))
     
@@ -258,11 +258,11 @@ def train(trainloader, model, lemniscate, criterion, CELoss, lambda_, optimizer,
     for tag, value in info.items():
         train_writer.add_scalar(tag, value, epoch)
 
-    print('Train TotalLoss: {:.6f} SNCALoss: {:.6f} CELoss: {:.6f}'.format(
-            losses.avg,
-            sncalosses.avg,
-            celosses.avg
-            ))
+    # print('Train TotalLoss: {:.6f} SNCALoss: {:.6f} CELoss: {:.6f}'.format(
+    #         losses.avg,
+    #         sncalosses.avg,
+    #         celosses.avg
+    #         ))
 
 def val(valloader, model, lemniscate, y_true, epoch, val_writer):
 
@@ -284,7 +284,7 @@ def val(valloader, model, lemniscate, y_true, epoch, val_writer):
             feature, _ = model(imgs)
 
             val_features += list(feature.cpu().numpy().astype(np.float32))
-            y_val_true += list(np.squeeze(label_batch.numpy()).astype(np.float32))
+            y_val_true += list(np.squeeze(label_batch.cpu().numpy()).astype(np.float32))
 
     y_val_true = np.asarray(y_val_true)
     val_features = np.asarray(val_features)
@@ -293,10 +293,10 @@ def val(valloader, model, lemniscate, y_true, epoch, val_writer):
 
     val_writer.add_scalar('KNN-Acc', acc, epoch)
 
-    print('Validation KNN-Acc: {:.6f} '.format(
-            acc,
-            # hammingBallRadiusPrec.val,
-            ))
+    # print('Validation KNN-Acc: {:.6f} '.format(
+    #         acc,
+    #         # hammingBallRadiusPrec.val,
+    #         ))
 
     return acc
 

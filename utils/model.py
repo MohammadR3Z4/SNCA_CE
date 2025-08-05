@@ -8,6 +8,7 @@ import torch.nn.functional as F
 import torch.nn.init as init
 from torch.autograd import Function
 from torchvision import models
+from torchvision.models import ResNet18_Weights, ResNet50_Weights
 
 
 def weights_init_kaiming(m):
@@ -30,7 +31,7 @@ class ResNet18(nn.Module):
     def __init__(self, dim = 128):
         super().__init__()
 
-        resnet = models.resnet18(pretrained=True)
+        resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT)
         
         self.encoder = nn.Sequential(
             resnet.conv1,
@@ -63,7 +64,7 @@ class ResNet50(nn.Module):
     def __init__(self, dim = 128):
         super().__init__()
 
-        resnet = models.resnet50(pretrained=True)
+        resnet = models.resnet50(weights=ResNet50_Weights.DEFAULT)
         
         self.encoder = nn.Sequential(
             resnet.conv1,
@@ -96,7 +97,7 @@ class ResNet18_cls(nn.Module):
     def __init__(self, clsNum, dim = 128):
         super().__init__()
 
-        resnet = models.resnet18(pretrained=True)
+        resnet = models.resnet18(weights=ResNet18_Weights.DEFAULT)
         
         self.encoder = nn.Sequential(
             resnet.conv1,
@@ -136,7 +137,7 @@ class ResNet50_cls(nn.Module):
     def __init__(self, clsNum, dim = 128):
         super().__init__()
 
-        resnet = models.resnet50(pretrained=True)
+        resnet = models.resnet50(weights=ResNet50_Weights.DEFAULT)
         
         self.encoder = nn.Sequential(
             resnet.conv1,
