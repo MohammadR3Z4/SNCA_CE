@@ -6,10 +6,10 @@ import math
 eps = 1e-8
 
 class NCACrossEntropy(nn.Module): 
-    ''' \sum_{j=C} log(p_{ij})
-        Store all the labels of the dataset.
-        Only pass the indexes of the training instances during forward. 
-    '''
+    # ''' \sum_{j=C} log(p_{ij})
+    #     Store all the labels of the dataset.
+    #     Only pass the indexes of the training instances during forward. 
+    # '''
     def __init__(self, labels, margin=0):
         super(NCACrossEntropy, self).__init__()
         self.register_buffer('labels', torch.LongTensor(labels.size(0)))

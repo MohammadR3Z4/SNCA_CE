@@ -24,59 +24,16 @@ import torch.backends.cudnn as cudnn
 
 
 import sys
-sys.path.append('../')
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
 from utils.LinearAverage import LinearAverage
 from utils.NCA import NCACrossEntropy
 from utils.model import ResNet18_cls, ResNet50_cls
 from utils.metrics import KNNClassification, MetricTracker
 from utils.dataGen import DataGeneratorSplitting
+# from utils.dataGen import SampleDataGenerator as DataGeneratorSplitting
 
-
-parser = argparse.ArgumentParser(description='PyTorch SNCA Training for RS')
-parser.add_argument('--data', metavar='DATA_DIR',  default='../data',
-                        help='path to dataset (default: ../data)')
-parser.add_argument('--dataset', metavar='DATASET',  default='ucmerced',
-                        help='learning on the dataset (ucmerced)')
-parser.add_argument('-b', '--batch-size', default=256, type=int,
-                        metavar='N', help='mini-batch size (default: 256)')
-parser.add_argument('--num_workers', default=8, type=int, metavar='N',
-                        help='num_workers for data loading in pytorch, (default:8)')
-parser.add_argument('--epochs', default=130, type=int, metavar='N',
-                    help='number of total epochs to run')
-parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
-                    metavar='LR', help='initial learning rate')
-parser.add_argument('--resume', default='', type=str, metavar='PATH',
-                    help='path to latest checkpoint (default: none)')
-parser.add_argument('--dim', default=128, type=int,
-                    metavar='D', help='embedding dimension (default:128)')
-parser.add_argument('--imgEXT', metavar='IMGEXT',  default='tif',
-                        help='img extension of the dataset (default: tif)')
-parser.add_argument('--temperature', default=0.05, type=float,
-                    metavar='T', help='temperature parameter')
-parser.add_argument('--memory-momentum', '--m-mementum', default=0.5, type=float,
-                    metavar='M', help='momentum for non-parametric updates')
-parser.add_argument('--margin', default=0.0, type=float,
-                    help='classification margin')
-parser.add_argument('--model', metavar='MODEL',  default='resnet18',
-                        help='CNN model (resnet18 or 50)')
-parser.add_argument('--lambda_', default=1, type=float,
-                    metavar='LAMBDA', help='penalty parameter')
-
-
-
-args = parser.parse_args()
-
-sv_name = datetime.strftime(datetime.now(), '%Y%m%d_%H%M%S')
-print('saving file name is ', sv_name)
-
-checkpoint_dir = os.path.join('./', sv_name, 'checkpoints')
-logs_dir = os.path.join('./', sv_name, 'logs')
-
-if not os.path.isdir(checkpoint_dir):
-    os.makedirs(checkpoint_dir)
-if not os.path.isdir(logs_dir):
-    os.makedirs(logs_dir)
+device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
 
 def write_arguments_to_file(args, filename):
     with open(filename, 'w') as f:
@@ -94,6 +51,51 @@ def save_checkpoint(state, is_best, name):
 
 def main():
     global args, sv_name, logs_dir, checkpoint_dir
+
+    parser = argparse.ArgumentParser(description='PyTorch SNCA Training for RS')
+    parser.add_argument('--data', metavar='DATA_DIR',  default='../data',
+                            help='path to dataset (default: ../data)')
+    parser.add_argument('--dataset', metavar='DATASET',  default='ucmerced',
+                            help='learning on the dataset (ucmerced)')
+    parser.add_argument('-b', '--batch-size', default=256, type=int,
+                            metavar='N', help='mini-batch size (default: 256)')
+    parser.add_argument('--num_workers', default=0, type=int, metavar='N',
+                            help='num_workers for data loading in pytorch, (default:8)')
+    parser.add_argument('--epochs', default=10, type=int, metavar='N',
+                        help='number of total epochs to run')
+    parser.add_argument('--lr', '--learning-rate', default=0.1, type=float,
+                        metavar='LR', help='initial learning rate')
+    parser.add_argument('--resume', default='', type=str, metavar='PATH',
+                        help='path to latest checkpoint (default: none)')
+    parser.add_argument('--dim', default=128, type=int,
+                        metavar='D', help='embedding dimension (default:128)')
+    parser.add_argument('--imgEXT', metavar='IMGEXT',  default='tif',
+                            help='img extension of the dataset (default: tif)')
+    parser.add_argument('--temperature', default=0.05, type=float,
+                        metavar='T', help='temperature parameter')
+    parser.add_argument('--memory-momentum', '--m-mementum', default=0.5, type=float,
+                        metavar='M', help='momentum for non-parametric updates')
+    parser.add_argument('--margin', default=0.0, type=float,
+                        help='classification margin')
+    parser.add_argument('--model', metavar='MODEL',  default='resnet18',
+                            help='CNN model (resnet18 or 50)')
+    parser.add_argument('--lambda_', default=1, type=float,
+                        metavar='LAMBDA', help='penalty parameter')
+
+
+
+    args = parser.parse_args()
+
+    sv_name = datetime.strftime(datetime.now(), '%Y%m%d_%H%M%S')
+    print('saving file name is ', sv_name)
+
+    checkpoint_dir = os.path.join('./', sv_name, 'checkpoints')
+    logs_dir = os.path.join('./', sv_name, 'logs')
+
+    if not os.path.isdir(checkpoint_dir):
+        os.makedirs(checkpoint_dir)
+    if not os.path.isdir(logs_dir):
+        os.makedirs(logs_dir)
 
     write_arguments_to_file(args, os.path.join('./', sv_name, sv_name+'_arguments.txt'))
 
@@ -133,16 +135,16 @@ def main():
                                             imgTransform=val_data_transform,
                                             phase='val')
 
-    train_data_loader = DataLoader(train_dataGen, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=True, pin_memory=True)
-    val_data_loader = DataLoader(val_dataGen, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=False, pin_memory=True)
-    trainloader_wo_shuf = DataLoader(train_dataGen, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=False, pin_memory=True)
+    train_data_loader = DataLoader(train_dataGen, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=True, pin_memory=False)
+    val_data_loader = DataLoader(val_dataGen, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=False, pin_memory=False)
+    trainloader_wo_shuf = DataLoader(train_dataGen, batch_size=args.batch_size, num_workers=args.num_workers, shuffle=False, pin_memory=False)
 
     if args.model == 'resnet18':
         model = ResNet18_cls(clsNum=len(train_dataGen.sceneList), dim=args.dim)
     else:
         model = ResNet50_cls(clsNum=len(train_dataGen.sceneList), dim=args.dim)
     if use_cuda:
-        model.cuda()
+        model = model.to(device)
     
     optimizer = torch.optim.SGD(model.parameters(), args.lr,
                                 momentum=0.9,
@@ -167,8 +169,8 @@ def main():
     else:
         # define lemniscate and loss function (criterion)
         ndata = len(train_dataGen)
-        lemniscate = LinearAverage(args.dim, ndata, args.temperature, args.memory_momentum).cuda()
-
+        # lemniscate = LinearAverage(args.dim, ndata, args.temperature, args.memory_momentum).cuda()
+        lemniscate = LinearAverage(args.dim, ndata, args.temperature, args.memory_momentum).to(device)
     y_true = []
 
     for idx, data in enumerate(tqdm(trainloader_wo_shuf, desc="extracting training labels")):
@@ -179,10 +181,12 @@ def main():
     
     y_true = np.asarray(y_true)
 
-    CELoss = torch.nn.CrossEntropyLoss().cuda()
+    # CELoss = torch.nn.CrossEntropyLoss().cuda()
+    CELoss = torch.nn.CrossEntropyLoss().to(device)
 
     criterion = NCACrossEntropy(torch.LongTensor(y_true),
-            args.margin / args.temperature).cuda()
+            # args.margin / args.temperature).cuda()
+            args.margin / args.temperature).to(device)
 
     scheduler = optim.lr_scheduler.StepLR(optimizer, step_size=30, gamma=0.5)
 
@@ -226,9 +230,9 @@ def train(trainloader, model, lemniscate, criterion, CELoss, lambda_, optimizer,
 
     for idx, data in enumerate(tqdm(trainloader, desc="training")):
 
-        imgs = data['img'].to(torch.device("cuda"))
-        index = data["idx"].to(torch.device("cuda"))
-        labels = data['label'].to(torch.device("cuda"))
+        imgs = data['img'].to(device)
+        index = data["idx"].to(device)
+        labels = data['label'].to(device)
 
         feature, logits = model(imgs)
         output = lemniscate(feature, index)
@@ -274,8 +278,8 @@ def val(valloader, model, lemniscate, y_true, epoch, val_writer):
     with torch.no_grad():
         for batch_idx, data in enumerate(tqdm(valloader, desc="validation")):
 
-            imgs = data['img'].to(torch.device("cuda"))
-            label_batch = data['label'].to(torch.device("cpu"))
+            imgs = data['img'].to(device)
+            label_batch = data['label'].to(device)
 
             feature, _ = model(imgs)
 

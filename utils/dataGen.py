@@ -50,8 +50,14 @@ class DataGeneratorSplitting:
     def __init__(self, data, dataset, imgExt='jpg', imgTransform=None, phase='train'):
 
         self.dataset = dataset
-        self.datadir = os.path.join(data, dataset)
+        
+        self.datadir = os.path.join(os.path.dirname(__file__), '..', 'data', dataset)
+        # print(f"datadir : {sorted(os.listdir(self.datadir))}")
+        if not os.path.exists(self.datadir):
+            raise FileNotFoundError(f"Directory not found: {self.datadir}")
+        # self.sceneList = [os.path.join(self.datadir, x) for x in sorted(os.listdir(self.datadir)) if os.path.isdir(os.path.join(self.datadir, x))]
         self.sceneList = [os.path.join(self.datadir, x) for x in sorted(os.listdir(self.datadir)) if os.path.isdir(os.path.join(self.datadir, x))]
+        # print(f"sceneList : {self.sceneList}")
         self.sceneFilesNum = defaultdict()
         
         self.train_idx2fileDict = defaultdict()
